@@ -20,6 +20,12 @@ fi
 echo ""
 echo "🚀 Gemini & Auto Browse Chrome Toolkit"
 echo "======================================="
+echo "📋 Workflow Steps:"
+echo "  1. Check and close running Chrome instances (required for file access)"
+echo "  2. Choose Action (Apply configurations or Revert from backup)"
+echo "  3. Configure Backup settings (if applying)"
+echo "  4. Select Chrome installations and apply changes"
+echo "-------------------------------------------------------------------"
 echo ""
 
 # Detect OS

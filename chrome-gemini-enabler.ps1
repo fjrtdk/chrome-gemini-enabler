@@ -6,6 +6,16 @@ Write-Host "⚠️  WARNING: The Windows/PowerShell version of this script is st
 Write-Host "⚠️  Please proceed with caution." -ForegroundColor Red
 Write-Host ""
 
+Write-Host "🚀 Gemini & Auto Browse Chrome Toolkit"
+Write-Host "======================================="
+Write-Host "📋 Workflow Steps:"
+Write-Host "  1. Check and close running Chrome instances (required for file access)"
+Write-Host "  2. Choose Action (Apply configurations or Revert from backup)"
+Write-Host "  3. Configure Backup settings (if applying)"
+Write-Host "  4. Select Chrome installations and apply changes"
+Write-Host "-------------------------------------------------------------------"
+Write-Host ""
+
 # Setup known Chrome channels on Windows
 $userProfile = [System.Environment]::GetFolderPath('UserProfile')
 $channelsData = @(
