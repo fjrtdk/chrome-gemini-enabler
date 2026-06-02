@@ -221,11 +221,9 @@ EOF
 # Display multi-select menu
 multiselect() {
     local title="$1"
-    local -n _options="$2"
-    local -n _selected="$3"
     
     local current=0
-    local size=${#_options[@]}
+    local size=${#CHANNELS_NAME[@]}
     
     hide_cursor
     
@@ -236,14 +234,14 @@ multiselect() {
         
         for ((i=0; i<size; i++)); do
             local marker="[ ]"
-            if [ "${_selected[i]}" = "true" ]; then
+            if [ "${selected_options[i]}" = "true" ]; then
                 marker="[\033[1;32m✓\033[0m]"
             fi
             
             if [ $i -eq $current ]; then
-                echo -e " \033[1;36m>\033[0m $marker ${_options[i]}"
+                echo -e " \033[1;36m>\033[0m $marker ${CHANNELS_NAME[i]}"
             else
-                echo -e "   $marker ${_options[i]}"
+                echo -e "   $marker ${CHANNELS_NAME[i]}"
             fi
         done
         
@@ -262,10 +260,10 @@ multiselect() {
         elif [[ $key == "" ]]; then # Enter key
             break
         elif [[ $key == " " ]]; then # Space key
-            if [ "${_selected[current]}" = "true" ]; then
-                _selected[current]="false"
+            if [ "${selected_options[current]}" = "true" ]; then
+                selected_options[current]="false"
             else
-                _selected[current]="true"
+                selected_options[current]="true"
             fi
         fi
         
@@ -321,10 +319,10 @@ for ((i=0; i<${#CHANNELS_NAME[@]}; i++)); do
 done
 
 # Run interactive checklist
-multiselect "Select Chrome installations to fix:" CHANNELS_NAME selected_options
+multiselect "Select Chrome installations to fix:"
 
 # Clear the checklist view from screen to keep output clean
-local lines_to_clear=$(( ${#CHANNELS_NAME[@]} + 3 ))
+lines_to_clear=$(( ${#CHANNELS_NAME[@]} + 3 ))
 for ((l=0; l<lines_to_clear; l++)); do
     echo -ne "\033[1A\033[2K"
 done
