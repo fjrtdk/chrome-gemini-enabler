@@ -1,48 +1,72 @@
-# Chrome Gemini Enabler
+# ✨ Chrome Gemini & Auto Browse Enabler 🚀
 
-An interactive, user-friendly shell script to enable Google Gemini (Glic) and **Auto Browse** ("Act on Web") agentic automation features in Google Chrome (Stable, Dev, Beta, Canary) on macOS and Linux for users outside of the United States.
+[![Platform Support](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue?style=for-the-badge)](https://github.com/fjrtdk/chrome-gemini-enabler)
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](https://choosealicense.com/licenses/mit/)
+[![Chrome Compatibility](https://img.shields.io/badge/Chrome-Stable%20%7C%20Dev%20%7C%20Beta%20%7C%20Canary-orange?style=for-the-badge)](https://www.google.com/chrome/)
 
----
-
-## Features
-
-- **Running Instance Detection**: Automatically checks for running Chrome processes and prompts for confirmation to force-close them before modifying configuration files.
-- **Auto-Detection**: Scans your system to detect which Chrome installations (Stable, Dev, Beta, Canary) are present.
-- **Interactive Terminal UI Checklist**: Presents a clean TUI checklist (supporting up/down arrow keys, Spacebar to toggle selection, and Enter to confirm) to select which installations to patch.
-- **Profile Traversal**: Recursively scans and patches configurations for all user profiles (Default, Profile 1, Profile 2, etc.) under the selected installation paths.
-- **Safe JSON Editing**: Uses Python (`python3`) to modify JSON configuration files safely without corrupting format or syntax.
-- **macOS Enterprise Policies**: Automatically configures the defaults domain plists on macOS to allow the agentic Auto Browse features to act on web pages.
+Unleash the hidden power of Google's next-gen AI companion! This script automatically unlocks **Gemini (Glic)** and the revolutionary **Auto Browse ("Act on Web")** AI agent in Google Chrome—instantly bypassing geographic restrictions and profile blocks with a single command.
 
 ---
 
-## How It Works
+## 🤖 What does this enable?
 
-For detailed information on the exact files and fields modified (variations, flags, preferences, policies), see [changes_made.md](changes_made.md).
+### 💬 Gemini (Glic) Sidebar
+Bring the official, built-in Gemini side panel to your screen. Ask questions, summarize pages, draft emails, and get contextual help directly alongside your active webpage.
 
----
+### 🌐 Auto Browse ("Act on Web")
+Step into the future of web automation. Unlocking Auto Browse allows Gemini to act as a **web agent** that can:
+- 📝 **Fill out forms** autonomously.
+- 🛍️ **Search, find, and compare products** across multiple pages.
+- 📅 **Schedule appointments** or look up flight options.
+- 🖱️ **Take control of the viewport** to click, scroll, and navigate tabs on your behalf.
 
-## Installation & Usage
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/fjrtdk/chrome-gemini-enabler.git
-   cd chrome-gemini-enabler
-   ```
-
-2. **Make the script executable:**
-   ```bash
-   chmod +x chrome-gemini-enabler.sh
-   ```
-
-3. **Run the script:**
-   ```bash
-   ./chrome-gemini-enabler.sh
-   ```
+*Normally restricted to U.S. Google accounts with specific AI Premium subscriptions, this script activates the necessary configurations locally so you can start testing immediately.*
 
 ---
 
-## Disclaimer
+## ⚡ Key Features
 
-Modifying browser configuration files is an advanced procedure that can lead to configuration errors or browser instability. The script creates backups of your configuration files (e.g., `Local State.bak`, `Preferences.bak`) before modifying them. **Use at your own risk.**
+- 🔍 **System Auto-Discovery**: Instantly scans your machine for installed Chrome versions (Stable, Dev, Beta, Canary).
+- 🎨 **Interactive TUI**: A beautiful terminal checklist menu. Navigate with Arrow keys, toggle with the **Spacebar**, and confirm with **Enter**.
+- 🔒 **Process Guard**: Automatically detects active Chrome processes and prompts for confirmation to safely force-close them (preventing configuration lockups).
+- 📂 **Multi-Profile Deep Patching**: Traverses all user profile folders (e.g., `Default`, `Profile 1`, `Profile 2`) to configure settings.
+- 🛡️ **macOS Enterprise Policies**: Modifies domain plists on macOS to write enterprise flags (`GeminiActOnWebSettings = 0`) allowing automation to act on web pages.
+- 🛡️ **Non-Destructive Patching**: Safely parses and edits the JSON using Python—never corrupting your file formatting. It also creates a `.bak` backup of every file it touches!
 
-Google Sync can occasionally overwrite local configurations; pausing sync or temporarily signing out of your Google account may be required if changes do not persist.
+---
+
+## ⚙️ How It Works (Under the Hood)
+
+The script patches the internal browser configurations by adjusting four layers:
+1. **Local State Variations**: Overrides `variations_country` to `"us"` to bypass regional geo-blocking.
+2. **Experimental Flags**: Injects **74+ flags** into the `enabled_labs_experiments` list (including `glic-actor`, `devtools-webmcp-support`, and `aim-server-eligibility`).
+3. **Onboarding Skip**: Updates profile preferences with `glic: { completed_fre: 1, geolocation_enabled: true }` to skip the First Run introduction.
+4. **Mac Plist Policies**: Deploys native system-level policies to authorize Gemini to operate on all URLs.
+
+For a full technical breakdown, check out [changes_made.md](changes_made.md).
+
+---
+
+## 🚀 Quick Start
+
+Ready to supercharge your Chrome browser? Run the following commands:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/fjrtdk/chrome-gemini-enabler.git
+cd chrome-gemini-enabler
+
+# 2. Make the script executable
+chmod +x chrome-gemini-enabler.sh
+
+# 3. Run the activator
+./chrome-gemini-enabler.sh
+```
+
+---
+
+## ⚠️ Disclaimer
+
+Editing Chrome configuration files is an advanced procedure. Although this script creates automatic backups (`.bak` files), please proceed with caution. **Use at your own risk.**
+
+*Note: Google Sync can sometimes sync account settings from the cloud and revert your local changes. If features disappear, simply pause Sync or run the script again.*
