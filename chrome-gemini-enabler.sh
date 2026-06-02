@@ -128,7 +128,10 @@ create_backup() {
     cp "$config_file" "$backup_folder/Local_State"
     
     # Copy Profile Preferences
+    local old_ifs="$IFS"
+    IFS=$'\n'
     local pref_files=($(find "$parent_dir" -maxdepth 2 -name "Preferences"))
+    IFS="$old_ifs"
     local profiles_json="[]"
     for pref_file in "${pref_files[@]}"; do
         local profile_name=$(basename "$(dirname "$pref_file")")
@@ -248,7 +251,7 @@ multiselect() {
         # Read key
         IFS= read -rsn1 key < /dev/tty
         if [[ $key == $'\x1b' ]]; then
-            read -rsn2 -t 0.1 key < /dev/tty
+            read -rsn2 -t 1 key < /dev/tty
             case $key in
                 '[A') # Up arrow
                     current=$(( (current - 1 + size) % size ))
@@ -444,7 +447,10 @@ EOF
     echo "   ✓ Enabled 40+ Glic/AI flags & US variation parameters in Local State"
     
     # 2. Edit Profile Preferences files (Default, Profile 1, etc.)
+    local old_ifs="$IFS"
+    IFS=$'\n'
     local pref_files=($(find "$parent_dir" -maxdepth 2 -name "Preferences"))
+    IFS="$old_ifs"
     for pref_file in "${pref_files[@]}"; do
         local profile_name=$(basename "$(dirname "$pref_file")")
         
