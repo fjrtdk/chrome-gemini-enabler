@@ -49,7 +49,13 @@ For a full technical breakdown, check out [changes_made.md](changes_made.md).
 
 ## 🚀 Quick Start
 
-Ready to supercharge your Chrome browser? Run the following commands:
+Ready to supercharge your Chrome browser? You can run the activator directly without cloning:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fjrtdk/chrome-gemini-enabler/main/chrome-gemini-enabler.sh | bash
+```
+
+Alternatively, you can clone and run it locally:
 
 ```bash
 # 1. Clone the repository
