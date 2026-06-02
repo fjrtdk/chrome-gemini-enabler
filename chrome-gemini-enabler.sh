@@ -277,6 +277,7 @@ glic_flags = [
     'proofreader-api-for-gemini-nano@1',
     'rewriter-api-for-gemini-nano@1',
     'summarizer-api-for-gemini-nano@1',
+    'skills@1',
     'sync-ai-threads@1',
     'sync-gemini-threads@1',
     'writer-api-for-gemini-nano@1'
