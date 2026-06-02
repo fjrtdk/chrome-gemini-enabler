@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Interactive Gemini and Auto Browse Enabler for Google Chrome
-# Patches Chrome configuration to unlock Glic (Gemini) and Auto Browse features
+# Interactive Gemini and Auto Browse Enabler & Reverter for Google Chrome
+# Patches or restores Chrome configurations to manage Glic (Gemini) and Auto Browse features
 # Supports: macOS, Linux
 
 set -e
@@ -18,8 +18,8 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 echo ""
-echo "🚀 Gemini & Auto Browse Chrome Fixer"
-echo "===================================="
+echo "🚀 Gemini & Auto Browse Chrome Toolkit"
+echo "======================================="
 echo ""
 
 # Detect OS
@@ -103,6 +103,115 @@ if [ ${#running_channels[@]} -gt 0 ]; then
     echo ""
 fi
 
+# Helper function to create a backup
+create_backup() {
+    local name="$1"
+    local config_file="$2"
+    local plist_domain="$3"
+    local target_dir="$4"
+    
+    local parent_dir=$(dirname "$config_file")
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local sanitize_name=$(echo "$name" | sed 's/[^a-zA-Z0-9]/_/g')
+    local backup_folder="$target_dir/chrome_backup_${sanitize_name}_${timestamp}"
+    
+    echo "💾 Creating backup of $name configurations..."
+    mkdir -p "$backup_folder"
+    
+    # Copy Local State
+    cp "$config_file" "$backup_folder/Local_State"
+    
+    # Copy Profile Preferences
+    local pref_files=($(find "$parent_dir" -maxdepth 2 -name "Preferences"))
+    local profiles_json="[]"
+    for pref_file in "${pref_files[@]}"; do
+        local profile_name=$(basename "$(dirname "$pref_file")")
+        cp "$pref_file" "$backup_folder/Preferences_$profile_name"
+        
+        # Append to metadata JSON list
+        profiles_json=$(python3 -c "import json; p = json.loads('$profiles_json'); p.append({'name': '$profile_name', 'path': '$pref_file'}); print(json.dumps(p))")
+    done
+    
+    # Back up macOS plist defaults
+    if [[ "$OS_TYPE" == "Darwin" ]] && [ -n "$plist_domain" ]; then
+        defaults read "$plist_domain" > "$backup_folder/defaults.plist" 2>/dev/null || true
+    fi
+    
+    # Save metadata JSON file
+    python3 - <<EOF
+import json
+meta = {
+    "channel_name": "$name",
+    "local_state_path": "$config_file",
+    "plist_domain": "$plist_domain",
+    "profiles": $profiles_json
+}
+with open("$backup_folder/backup_meta.json", "w") as f:
+    json.dump(meta, f, indent=4)
+EOF
+
+    echo "   ✓ Backup successfully saved to: $backup_folder"
+}
+
+# Helper function to revert from a backup folder
+revert_backup() {
+    local backup_folder="$1"
+    
+    # Resolve tilde
+    backup_folder="${backup_folder/#\~/$HOME}"
+    
+    if [ ! -d "$backup_folder" ] || [ ! -f "$backup_folder/backup_meta.json" ]; then
+        echo "❌ Invalid backup folder path. Could not find backup_meta.json inside '$backup_folder'."
+        exit 1
+    fi
+    
+    echo "🔄 Restoring configuration from backup directory: $backup_folder"
+    
+    local local_state_path=$(python3 -c "import json; print(json.load(open('$backup_folder/backup_meta.json'))['local_state_path'])")
+    local plist_domain=$(python3 -c "import json; print(json.load(open('$backup_folder/backup_meta.json'))['plist_domain'])")
+    
+    # Restore Local State
+    if [ -f "$backup_folder/Local_State" ]; then
+        cp "$backup_folder/Local_State" "$local_state_path"
+        echo "   ✓ Restored Local State file to: $local_state_path"
+    fi
+    
+    # Restore Profile Preferences
+    python3 - <<EOF
+import json
+import shutil
+import os
+
+meta = json.load(open("$backup_folder/backup_meta.json"))
+for profile in meta.get("profiles", []):
+    name = profile["name"]
+    path = profile["path"]
+    backup_file = os.path.join("$backup_folder", f"Preferences_{name}")
+    if os.path.exists(backup_file):
+        shutil.copy2(backup_file, path)
+        print(f"   ✓ Restored Preferences for profile '{name}' to: {path}")
+EOF
+
+    # Restore macOS policies
+    if [[ "$OS_TYPE" == "Darwin" ]] && [ -n "$plist_domain" ]; then
+        # Delete policies to clean them up
+        defaults delete "$plist_domain" GeminiActOnWebSettings >/dev/null 2>&1 || true
+        defaults delete "$plist_domain" GeminiSettings >/dev/null 2>&1 || true
+        defaults delete "$plist_domain" GenAiDefaultSettings >/dev/null 2>&1 || true
+        defaults delete "$plist_domain" GeminiActOnWebAllowedForURLs >/dev/null 2>&1 || true
+        
+        if [ -f "$backup_folder/defaults.plist" ]; then
+            defaults write "$plist_domain" "$(cat "$backup_folder/defaults.plist")" 2>/dev/null || true
+            echo "   ✓ Restored original macOS enterprise policies for domain: $plist_domain"
+        else
+            echo "   ✓ Cleaned up custom enterprise policies for defaults domain: $plist_domain"
+        fi
+    fi
+    
+    echo ""
+    echo "🎉 Revert process complete! Please restart your browser."
+}
+
 # Display multi-select menu
 multiselect() {
     local title="$1"
@@ -164,6 +273,41 @@ multiselect() {
     show_cursor
 }
 
+# Ask user for Apply vs Revert Action
+echo "Please choose an action:"
+echo "  [1] Apply Gemini & Auto Browse configurations"
+echo "  [2] Revert browser settings to a previous backup"
+echo ""
+read -p "Select option (1 or 2): " -n 1 -r action < /dev/tty
+echo ""
+
+if [[ "$action" == "2" ]]; then
+    echo "=== Revert Configuration ==="
+    read -p "Enter the directory path of the backup folder to restore: " -r backup_input < /dev/tty
+    echo ""
+    revert_backup "$backup_input"
+    exit 0
+fi
+
+if [[ "$action" != "1" ]]; then
+    echo "❌ Invalid action selected. Exiting."
+    exit 1
+fi
+
+# Ask if user wants to backup
+read -p "Create a backup of current settings before modifying? (y/N): " -n 1 -r backup_agree < /dev/tty
+echo ""
+
+do_backup="false"
+backup_dest=""
+if [[ "$backup_agree" =~ ^[Yy]$ ]]; then
+    do_backup="true"
+    read -p "Enter directory path to save backup [default: ~/]: " -r backup_dest < /dev/tty
+    backup_dest="${backup_dest:-$HOME}"
+    backup_dest="${backup_dest/#\~/$HOME}"
+    echo ""
+fi
+
 # Initialize select status
 selected_options=()
 for ((i=0; i<${#CHANNELS_NAME[@]}; i++)); do
@@ -174,7 +318,7 @@ done
 multiselect "Select Chrome installations to fix:" CHANNELS_NAME selected_options
 
 # Clear the checklist view from screen to keep output clean
-lines_to_clear=$(( ${#CHANNELS_NAME[@]} + 3 ))
+local lines_to_clear=$(( ${#CHANNELS_NAME[@]} + 3 ))
 for ((l=0; l<lines_to_clear; l++)); do
     echo -ne "\033[1A\033[2K"
 done
@@ -200,10 +344,6 @@ patch_chrome_config() {
     local parent_dir=$(dirname "$config_file")
     
     echo "🔧 Fixing configuration for: $name"
-    
-    # 1. Back up and edit Local State
-    cp "$config_file" "$config_file.bak"
-    echo "   ✓ Created backup of Local State"
     
     python3 - <<EOF
 import json
@@ -299,12 +439,10 @@ with open(path, "w") as f:
 EOF
     echo "   ✓ Enabled 40+ Glic/AI flags & US variation parameters in Local State"
     
-    # 2. Back up and edit Profile Preferences files (Default, Profile 1, etc.)
+    # 2. Edit Profile Preferences files (Default, Profile 1, etc.)
     local pref_files=($(find "$parent_dir" -maxdepth 2 -name "Preferences"))
     for pref_file in "${pref_files[@]}"; do
         local profile_name=$(basename "$(dirname "$pref_file")")
-        cp "$pref_file" "$pref_file.bak"
-        echo "   ✓ Created backup of Preferences for profile: $profile_name"
         
         python3 - <<EOF
 import json
@@ -348,9 +486,12 @@ EOF
     echo ""
 }
 
-# Loop and run fix on selections
+# Loop and run backup/fix on selections
 for ((i=0; i<${#CHANNELS_NAME[@]}; i++)); do
     if [ "${selected_options[i]}" = "true" ]; then
+        if [ "$do_backup" = "true" ]; then
+            create_backup "${CHANNELS_NAME[i]}" "${CHANNELS_CONFIG[i]}" "${CHANNELS_PLIST[i]}" "$backup_dest"
+        fi
         patch_chrome_config "${CHANNELS_NAME[i]}" "${CHANNELS_CONFIG[i]}" "${CHANNELS_PLIST[i]}"
     fi
 done

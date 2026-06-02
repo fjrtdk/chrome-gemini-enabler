@@ -1,5 +1,5 @@
-# Windows Gemini & Auto Browse Chrome Enabler
-# Patches Chrome configuration to unlock Glic (Gemini) and Auto Browse features on Windows
+# Windows Gemini & Auto Browse Chrome Toolkit
+# Patches or restores Chrome configurations to manage Glic (Gemini) and Auto Browse features on Windows
 
 Write-Host ""
 Write-Host "⚠️  WARNING: The Windows/PowerShell version of this script is still UNTESTED." -ForegroundColor Red
@@ -42,6 +42,130 @@ if ($running) {
     Write-Host "✓ Running processes closed.`n"
 }
 
+# Helper function to create a backup
+function Create-Backup {
+    param(
+        [string]$Name,
+        [string]$ConfigPath,
+        [string]$TargetDir
+    )
+    
+    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+    $sanitizeName = $Name -replace '[^a-zA-Z0-9]', '_'
+    $backupFolder = Join-Path $TargetDir "chrome_backup_${sanitizeName}_${timestamp}"
+    
+    Write-Host "💾 Creating backup of $Name configurations..." -ForegroundColor Cyan
+    New-Item -ItemType Directory -Path $backupFolder -Force | Out-Null
+    
+    # Backup Local State
+    Copy-Item $ConfigPath -Destination (Join-Path $backupFolder "Local_State") -Force
+    
+    # Backup Profile Preferences
+    $parentDir = Split-Path $ConfigPath -Parent
+    $preferencesFiles = Get-ChildItem -Path $parentDir -Filter "Preferences" -Recurse -Depth 2
+    
+    $profiles = @()
+    foreach ($prefFile in $preferencesFiles) {
+        $prefPath = $prefFile.FullName
+        $profileName = Split-Path (Split-Path $prefPath -Parent) -Leaf
+        
+        Copy-Item $prefPath -Destination (Join-Path $backupFolder "Preferences_$profileName") -Force
+        
+        $profiles += @{
+            name = $profileName
+            path = $prefPath
+        }
+    }
+    
+    # Create metadata JSON
+    $meta = @{
+        channel_name = $Name
+        local_state_path = $ConfigPath
+        profiles = $profiles
+    }
+    
+    $meta | ConvertTo-Json -Depth 10 | Out-File (Join-Path $backupFolder "backup_meta.json") -Encoding utf8
+    
+    Write-Host "   ✓ Backup successfully saved to: $backupFolder" -ForegroundColor Green
+}
+
+# Helper function to restore from a backup
+function Revert-Backup {
+    param(
+        [string]$BackupFolder
+    )
+    
+    if (-not (Test-Path $BackupFolder) -or -not (Test-Path (Join-Path $BackupFolder "backup_meta.json"))) {
+        Write-Error "❌ Invalid backup folder path. Could not find backup_meta.json inside '$BackupFolder'."
+        return
+    }
+    
+    Write-Host "🔄 Restoring configuration from backup directory: $BackupFolder" -ForegroundColor Cyan
+    
+    $meta = Get-Content (Join-Path $BackupFolder "backup_meta.json") -Raw | ConvertFrom-Json
+    $localStatePath = $meta.local_state_path
+    
+    # Restore Local State
+    if (Test-Path (Join-Path $BackupFolder "Local_State")) {
+        Copy-Item (Join-Path $BackupFolder "Local_State") -Destination $localStatePath -Force
+        Write-Host "   ✓ Restored Local State file to: $localStatePath" -ForegroundColor Green
+    }
+    
+    # Restore Profile Preferences
+    foreach ($profile in $meta.profiles) {
+        $name = $profile.name
+        $path = $profile.path
+        $backupFile = Join-Path $BackupFolder "Preferences_$name"
+        if (Test-Path $backupFile) {
+            Copy-Item $backupFile -Destination $path -Force
+            Write-Host "   ✓ Restored Preferences for profile '$name' to: $path" -ForegroundColor Green
+        }
+    }
+    
+    Write-Host "`n🎉 Revert process complete! Please restart your browser." -ForegroundColor Green
+}
+
+# Ask user for Apply vs Revert Action
+Write-Host "Please choose an action:"
+Write-Host "  [1] Apply Gemini & Auto Browse configurations"
+Write-Host "  [2] Revert browser settings to a previous backup"
+Write-Host ""
+$action = Read-Host "Select option (1 or 2)"
+Write-Host ""
+
+if ($action -eq "2") {
+    Write-Host "=== Revert Configuration ==="
+    $backupInput = Read-Host "Enter the directory path of the backup folder to restore"
+    Write-Host ""
+    Revert-Backup $backupInput
+    exit
+}
+
+if ($action -ne "1") {
+    Write-Error "❌ Invalid action selected. Exiting."
+    exit
+}
+
+# Ask if user wants to backup
+$backupAgree = Read-Host "Create a backup of current settings before modifying? (y/N)"
+$doBackup = $false
+$backupDest = ""
+if ($backupAgree -like "y*") {
+    $doBackup = $true
+    $backupDest = Read-Host "Enter directory path to save backup [default: ~]"
+    if ([string]::IsNullOrWhiteSpace($backupDest)) {
+        $backupDest = $Home
+    }
+    # Resolve path
+    $resolved = Resolve-Path $backupDest -ErrorAction SilentlyContinue
+    if ($resolved) {
+        $backupDest = $resolved.Path
+    } else {
+        $backupDest = $Home
+    }
+    Write-Host ""
+}
+
 # Prompt selection
 Write-Host "=== Select Chrome installations to fix ==="
 for ($i = 0; $i -lt $installed.Count; $i++) {
@@ -69,13 +193,13 @@ if ($selected.Count -eq 0) {
 
 # Patch selections
 foreach ($ch in $selected) {
+    # Perform backup if requested
+    if ($doBackup) {
+        Create-Backup $ch.Name $ch.Path $backupDest
+    }
+    
     Write-Host "🔧 Fixing configuration for: $($ch.Name)"
-    
     $localStatePath = $ch.Path
-    $backupPath = "$localStatePath.bak"
-    Copy-Item $localStatePath -Destination $backupPath -Force
-    Write-Host "   ✓ Created backup of Local State"
-    
     $jsonContent = Get-Content $localStatePath -Raw | ConvertFrom-Json
     
     $jsonContent.variations_country = "us"
@@ -184,9 +308,6 @@ foreach ($ch in $selected) {
     foreach ($prefFile in $preferencesFiles) {
         $prefPath = $prefFile.FullName
         $profileName = Split-Path (Split-Path $prefPath -Parent) -Leaf
-        
-        Copy-Item $prefPath -Destination "$prefPath.bak" -Force -ErrorAction SilentlyContinue
-        Write-Host "   ✓ Created backup of Preferences for profile: $profileName"
         
         $prefJson = Get-Content $prefPath -Raw | ConvertFrom-Json
         
