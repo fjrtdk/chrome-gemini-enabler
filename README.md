@@ -49,7 +49,11 @@ For a full technical breakdown, check out [changes_made.md](changes_made.md).
 
 ## 🚀 Quick Start
 
-Ready to supercharge your Chrome browser? You can run the activator directly without cloning:
+Ready to supercharge your Chrome browser?
+
+### 🍎 macOS & 🐧 Linux
+
+Run the activator directly without cloning:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fjrtdk/chrome-gemini-enabler/main/chrome-gemini-enabler.sh | bash
@@ -67,6 +71,17 @@ chmod +x chrome-gemini-enabler.sh
 
 # 3. Run the activator
 ./chrome-gemini-enabler.sh
+```
+
+### 🪟 Windows (PowerShell)
+
+> [!WARNING]
+> The Windows / PowerShell version of this script is **still untested**. Please proceed with caution and ensure you have backups (the script automatically creates `.bak` files before modification).
+
+Run the activator directly in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/fjrtdk/chrome-gemini-enabler/main/chrome-gemini-enabler.ps1 | iex
 ```
 
 ---
