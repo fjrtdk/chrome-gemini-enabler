@@ -84,7 +84,7 @@ if [ ${#running_channels[@]} -gt 0 ]; then
         echo "   - $rc"
     done
     echo ""
-    read -p "Do you want to continue? This will automatically FORCE CLOSE them. (y/n): " -n 1 -r
+    read -p "Do you want to continue? This will automatically FORCE CLOSE them. (y/n): " -n 1 -r < /dev/tty
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "❌ Aborted by user."
@@ -133,9 +133,9 @@ multiselect() {
         done
         
         # Read key
-        IFS= read -rsn1 key
+        IFS= read -rsn1 key < /dev/tty
         if [[ $key == $'\x1b' ]]; then
-            read -rsn2 -t 0.1 key
+            read -rsn2 -t 0.1 key < /dev/tty
             case $key in
                 '[A') # Up arrow
                     current=$(( (current - 1 + size) % size ))
