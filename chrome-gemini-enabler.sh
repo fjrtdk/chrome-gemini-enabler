@@ -141,9 +141,13 @@ create_backup() {
         profiles_json=$(python3 -c "import json; p = json.loads('$profiles_json'); p.append({'name': '$profile_name', 'path': '$pref_file'}); print(json.dumps(p))")
     done
     
-    # Back up macOS plist defaults
+    # Back up macOS plist defaults (export produces a real plist that import can restore)
     if [[ "$OS_TYPE" == "Darwin" ]] && [ -n "$plist_domain" ]; then
-        defaults read "$plist_domain" > "$backup_folder/defaults.plist" 2>/dev/null || true
+        defaults export "$plist_domain" "$backup_folder/defaults.plist" 2>/dev/null || true
+        # Drop empty snapshots (domain never existed) so revert leaves it absent
+        if ! python3 -c "import plistlib,sys; sys.exit(0 if plistlib.load(open('$backup_folder/defaults.plist','rb')) else 1)" 2>/dev/null; then
+            rm -f "$backup_folder/defaults.plist"
+        fi
     fi
     
     # Save metadata JSON file
@@ -210,7 +214,7 @@ EOF
         defaults delete "$plist_domain" GeminiActOnWebAllowedForURLs >/dev/null 2>&1 || true
         
         if [ -f "$backup_folder/defaults.plist" ]; then
-            defaults write "$plist_domain" "$(cat "$backup_folder/defaults.plist")" 2>/dev/null || true
+            defaults import "$plist_domain" "$backup_folder/defaults.plist" 2>/dev/null || true
             echo "   ✓ Restored original macOS enterprise policies for domain: $plist_domain"
         else
             echo "   ✓ Cleaned up custom enterprise policies for defaults domain: $plist_domain"
@@ -378,56 +382,63 @@ if not isinstance(experiments, list):
     experiments = []
 
 glic_flags = [
-    'ai-mode-omnibox-entry-point@1',
-    'aim-entry-point-direct-navigation@1',
-    'aim-server-eligibility-include-client-locale@1',
-    'aim-server-eligibility@1',
-    'aim-use-pec-api@1',
-    'autofill-ai-server-model@1',
-    'autofill-enable-ai-based-amount-extraction@1',
-    'browsing-history-actor-integration-M2@1',
-    'browsing-history-actor-integration-M3@1',
-    'contextual-tasks-context-library@1',
-    'devtools-webmcp-support@1',
-    'enable-webmcp-testing@1',
-    'glic-actor-autofill@1',
-    'glic-actor-cursor@1',
-    'glic-actor-script-tools@1',
-    'glic-actor@1',
-    'glic-bind-pinned-unbound-tab@1',
-    'glic-button-auto-summarize@1',
-    'glic-button-pressed-state@1',
-    'glic-capture-region@1',
-    'glic-chrome-status-icon@1',
-    'glic-client-zoom-control@1',
-    'glic-contextual-cue-bubble@1',
-    'glic-daisy-chain-new-tabs@1',
-    'glic-default-tab-context-setting@1',
-    'glic-default-to-last-active-conversation@1',
-    'glic-detached@1',
-    'glic-entrypoint-variations@1',
-    'glic-experimental-triggering@1',
-    'glic-horizontal-tab-toolbar-button@1',
-    'glic-mi-tab-context-menu@1',
-    'glic-pre-warming@2',
-    'glic-print-menu-item@1',
-    'glic-selection-prompt@1',
-    'glic-share-image@1',
-    'glic-tab-restoration@1',
-    'glic-toolbar-button-location@1',
-    'glic-toolbar-height-side-panel@1',
-    'glic-trust-first-onboarding@3',
-    'glic@1',
-    'optimization-guide-on-device-model@2',
-    'prompt-api-for-gemini-nano-multimodal-input@1',
-    'prompt-api-for-gemini-nano@1',
-    'proofreader-api-for-gemini-nano@1',
-    'rewriter-api-for-gemini-nano@1',
-    'summarizer-api-for-gemini-nano@1',
-    'skills@1',
-    'sync-ai-threads@1',
-    'sync-gemini-threads@1',
-    'writer-api-for-gemini-nano@1'
+    'aim-server-eligibility-include-client-locale@1'
+    'aim-server-eligibility@1'
+    'aim-use-pec-api@1'
+    'autofill-ai-server-model@1'
+    'autofill-enable-ai-based-amount-extraction@1'
+    'autofill-enable-save-and-fill@1'
+    'contextual-tasks-back-button-expands-side-panel@1'
+    'contextual-tasks-context-library@1'
+    'contextual-tasks-context@2'
+    'contextual-tasks-rearchitecture@1'
+    'contextual-tasks-side-panel-rearchitecture@1'
+    'contextual-tasks-side-panel@1'
+    'contextual-tasks-suggestions-enabled@1'
+    'contextual-tasks@1'
+    'default-browser-prompt-surfaces@4'
+    'devtools-webmcp-support@1'
+    'enable-browser-actuator-for-glic-experimental-triggering@1'
+    'enable-lens-side-panel-unification@1'
+    'enable-webmcp-testing@1'
+    'glic-actor-autofill-pre-click@1'
+    'glic-actor-autofill-section-label@1'
+    'glic-actor-autofill@1'
+    'glic-actor-cursor@1'
+    'glic-actor-script-tools@1'
+    'glic-actor-transient-tasks@1'
+    'glic-actor@1'
+    'glic-background-actuation@1'
+    'glic-background-triggering@1'
+    'glic-capture-region@1'
+    'glic-daisy-chain-new-tabs@1'
+    'glic-default-to-last-active-conversation@1'
+    'glic-experimental-triggering-screenshot@1'
+    'glic-experimental-triggering-suppress-done-notification@1'
+    'glic-experimental-triggering@1'
+    'glic-horizontal-tab-toolbar-button@1'
+    'glic-opt-in-dialog-a11y-fix@1'
+    'glic-os-icon-variant@1'
+    'glic-pdf-summarize@1'
+    'glic-selection-prompt@1'
+    'glic-settings-a11y-context-fix@1'
+    'glic-spark-settings-accessible-labels@1'
+    'glic-tab-groups@2'
+    'glic-toolbar-button-location@1'
+    'glic-toolbar-height-side-panel@1'
+    'glic@1'
+    'omnibox-dynamic-aim-submit@2'
+    'prompt-api-multimodal-input@1'
+    'prompt-api@1'
+    'rewriter-api@1'
+    'searchbox-embedded-permission@1'
+    'show-autofill-type-predictions@2'
+    'skills@1'
+    'summarizer-api@1'
+    'sync-ai-threads@1'
+    'sync-gemini-threads@1'
+    'webui-omnibox-aim-popup@1'
+    'writer-api@1'
 ]
 
 for flag in glic_flags:
@@ -507,5 +518,18 @@ for ((i=0; i<${#CHANNELS_NAME[@]}; i++)); do
 done
 
 echo "✅ All selected Chrome browser configurations have been successfully updated!"
-echo "📌 Please restart your browser to apply changes."
+echo ""
+echo "🚨 Chromium gates the Gemini-in-Chrome panel (Glic) behind --glic-dev, which is"
+echo "   deliberately command-line-only. No chrome://flags entry can set it, so editing"
+echo "   Local State alone leaves the panel dark. Relaunch with the switch:"
+echo ""
+echo "     \"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" \\"
+echo "       --glic-dev --glic-open-on-startup=attached --variations-override-country=US"
+echo ""
+echo "   Do NOT add --glic-automation: it makes the panel fail with"
+echo "   \"Gemini isn't available right now\" on first load."
+echo ""
+echo "📌 Quit Chrome fully first, otherwise it overwrites the patched Local State on exit."
+echo ""
+
 echo ""
