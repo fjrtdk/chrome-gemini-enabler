@@ -392,8 +392,15 @@ glic_flags = [
     'enable-webmcp-testing@1',
     'glic-actor-autofill@1',
     'glic-actor-cursor@1',
+    'glic-actor-incremental-typing@1',
+    'glic-actor-move-before-click@1',
+    'glic-actor-permissions-bypass@1',
     'glic-actor-script-tools@1',
+    'glic-actor-ui-magic-cursor@1',
+    'glic-actor-ui@1',
     'glic-actor@1',
+    'glic-background-actuation@1',
+    'glic-background-triggering@1',
     'glic-bind-pinned-unbound-tab@1',
     'glic-button-auto-summarize@1',
     'glic-button-pressed-state@1',
@@ -405,8 +412,13 @@ glic_flags = [
     'glic-default-tab-context-setting@1',
     'glic-default-to-last-active-conversation@1',
     'glic-detached@1',
+    'glic-disable-actor-safety-checks@1',
     'glic-entrypoint-variations@1',
+    'glic-experimental-triggering-opt-in-bypass@1',
+    'glic-experimental-triggering-screenshot@1',
+    'glic-experimental-triggering-script-tools@1',
     'glic-experimental-triggering@1',
+    'glic-fre-sync@1',
     'glic-horizontal-tab-toolbar-button@1',
     'glic-mi-tab-context-menu@1',
     'glic-pre-warming@2',
@@ -417,14 +429,16 @@ glic_flags = [
     'glic-toolbar-button-location@1',
     'glic-toolbar-height-side-panel@1',
     'glic-trust-first-onboarding@3',
+    'glic-web-actuation-setting@1',
+    'glic-web-actuation-settings-toggle@1',
     'glic@1',
     'optimization-guide-on-device-model@2',
     'prompt-api-for-gemini-nano-multimodal-input@1',
     'prompt-api-for-gemini-nano@1',
     'proofreader-api-for-gemini-nano@1',
     'rewriter-api-for-gemini-nano@1',
-    'summarizer-api-for-gemini-nano@1',
     'skills@1',
+    'summarizer-api-for-gemini-nano@1',
     'sync-ai-threads@1',
     'sync-gemini-threads@1',
     'writer-api-for-gemini-nano@1'
@@ -489,7 +503,7 @@ EOF
         defaults write "$plist_domain" GeminiActOnWebSettings -int 0
         defaults write "$plist_domain" GeminiSettings -int 0
         defaults write "$plist_domain" GenAiDefaultSettings -int 0
-        defaults write "$plist_domain" GeminiActOnWebAllowedForURLs -array "*"
+        defaults write "$plist_domain" GeminiActOnWebAllowedForURLs -array "*" "https://*" "https://*.youtube.com/*" "https://youtube.com/*"
     fi
     
     echo "   🎉 Fix complete for $name!"
@@ -506,6 +520,66 @@ for ((i=0; i<${#CHANNELS_NAME[@]}; i++)); do
     fi
 done
 
-echo "✅ All selected Chrome browser configurations have been successfully updated!"
-echo "📌 Please restart your browser to apply changes."
+# Launcher Setup
+echo "🚀 Setting up Chrome AI launcher..."
+LAUNCHER_FEATURES="Glic,GlicActor:glic_actor_policy_control_exemption/true,GlicActorPermissionsBypass,GlicActorUi,GlicActorUiMagicCursor,GlicActorIncrementalTyping,GlicActorEnableScriptTools,GlicActorAutofill,GlicDaisyChainNewTabs,GlicBackgroundActuation,GlicBackgroundTriggering,GlicExperimentalTriggering,GlicExperimentalTriggeringScriptTools,GlicExperimentalTriggeringScreenshot,GlicExperimentalTriggeringOptInBypass,GlicActorMoveBeforeClick,GlicWebActuationSetting,GlicWebActuationSettingsToggle,GlicCaptureRegion,WebMCP,DevToolsWebMCPSupport,AIPromptAPIMultimodalInput"
+LAUNCHER_DISABLE_FEATURES="GlicCountryFiltering,GlicLocaleFiltering,GlicUseSessionCountryForFiltering"
+
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+    APP_DIR="$HOME/Applications/Chrome AI.app"
+    mkdir -p "$APP_DIR/Contents/MacOS"
+    cat << 'EOF' > "$APP_DIR/Contents/MacOS/Chrome AI"
+#!/bin/bash
+CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+if [ ! -f "$CHROME_BIN" ]; then
+    CHROME_BIN=$(mdfind 'kMDItemCFBundleIdentifier == "com.google.Chrome"' | head -n 1)
+    if [ -n "$CHROME_BIN" ]; then
+        CHROME_BIN="$CHROME_BIN/Contents/MacOS/Google Chrome"
+    fi
+fi
+
+exec "$CHROME_BIN" \
+  --glic-dev \
+  --glic-open-on-startup=attached \
+  --variations-override-country=US \
+  --disable-actor-safety-checks \
+  --enable-features="Glic,GlicActor:glic_actor_policy_control_exemption/true,GlicActorPermissionsBypass,GlicActorUi,GlicActorUiMagicCursor,GlicActorIncrementalTyping,GlicActorEnableScriptTools,GlicActorAutofill,GlicDaisyChainNewTabs,GlicBackgroundActuation,GlicBackgroundTriggering,GlicExperimentalTriggering,GlicExperimentalTriggeringScriptTools,GlicExperimentalTriggeringScreenshot,GlicExperimentalTriggeringOptInBypass,GlicActorMoveBeforeClick,GlicWebActuationSetting,GlicWebActuationSettingsToggle,GlicCaptureRegion,WebMCP,DevToolsWebMCPSupport,AIPromptAPIMultimodalInput" \
+  --disable-features="GlicCountryFiltering,GlicLocaleFiltering,GlicUseSessionCountryForFiltering" \
+  "$@"
+EOF
+    chmod +x "$APP_DIR/Contents/MacOS/Chrome AI"
+
+    # Also install command-line shortcut
+    mkdir -p "$HOME/.local/bin"
+    cp "$APP_DIR/Contents/MacOS/Chrome AI" "$HOME/.local/bin/chrome-ai"
+    chmod +x "$HOME/.local/bin/chrome-ai"
+    echo "   ✓ Created standalone application: $APP_DIR"
+    echo "   ✓ Installed CLI shortcut: $HOME/.local/bin/chrome-ai"
+elif [[ "$OS_TYPE" == "Linux" ]]; then
+    mkdir -p "$HOME/.local/bin"
+    cat << 'EOF' > "$HOME/.local/bin/chrome-ai"
+#!/bin/bash
+CHROME_BIN=$(which google-chrome-stable || which google-chrome || which chrome || true)
+exec "$CHROME_BIN" \
+  --glic-dev \
+  --glic-open-on-startup=attached \
+  --variations-override-country=US \
+  --disable-actor-safety-checks \
+  --enable-features="Glic,GlicActor:glic_actor_policy_control_exemption/true,GlicActorPermissionsBypass,GlicActorUi,GlicActorUiMagicCursor,GlicActorIncrementalTyping,GlicActorEnableScriptTools,GlicActorAutofill,GlicDaisyChainNewTabs,GlicBackgroundActuation,GlicBackgroundTriggering,GlicExperimentalTriggering,GlicExperimentalTriggeringScriptTools,GlicExperimentalTriggeringScreenshot,GlicExperimentalTriggeringOptInBypass,GlicActorMoveBeforeClick,GlicWebActuationSetting,GlicWebActuationSettingsToggle,GlicCaptureRegion,WebMCP,DevToolsWebMCPSupport,AIPromptAPIMultimodalInput" \
+  --disable-features="GlicCountryFiltering,GlicLocaleFiltering,GlicUseSessionCountryForFiltering" \
+  "$@"
+EOF
+    chmod +x "$HOME/.local/bin/chrome-ai"
+    echo "   ✓ Installed CLI shortcut: $HOME/.local/bin/chrome-ai"
+fi
+
+echo ""
+echo "✅ All selected Chrome browser configurations and AI features have been enabled!"
+echo "📌 To launch with full Google One AI Premium bypass & Auto Browse actuation:"
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+    echo "   • Open 'Chrome AI' from ~/Applications or Spotlight"
+    echo "   • Or run: ~/.local/bin/chrome-ai"
+else
+    echo "   • Run: ~/.local/bin/chrome-ai"
+fi
 echo ""

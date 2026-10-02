@@ -57,7 +57,38 @@ To prevent Chrome from restricting "Act on Web" (Auto Browse) actions, policies 
 - **`GeminiSettings = 0`**: Ensures the Gemini sidebar app is fully allowed.
 - **`GeminiActOnWebSettings = 0`**: Explicitly permits Gemini to take actions (click, type, navigate) on web pages.
 - **`GenAiDefaultSettings = 0`**: Sets the default for all generative AI integrations to "allowed."
-- **`GeminiActOnWebAllowedForURLs = ["*"]`**: Allows Auto Browse to work across all websites.
+- **`GeminiActOnWebAllowedForURLs = ["*", "https://*", "https://*.youtube.com/*", "https://youtube.com/*"]`**: Allows Auto Browse to work across all websites.
+
+---
+
+## 5. Policy Control Exemption Engine (Reverse Engineering Breakthrough)
+
+In Chrome versions with Glic Actor, internal policy verification is handled by `GlicActorPolicyChecker::ComputeActOnWebCapability`. By default, Chrome checks if the signed-in Google account has active Chrome benefits (`AccountHasChromeBenefits` / `kAccountMissingChromeBenefits`), which normally restricts Auto Browse actuation to users with an active **Google One AI Premium** subscription.
+
+However, auditing the Chromium actor policy checker source reveals an intentional developer exemption switch:
+```cpp
+if (features::kGlicActorPolicyControlExemption.Get()) {
+    return log_and_return(CanActOutcome::kYes, "exempted via cmdline `glic_actor_policy_control_exemption`");
+}
+```
+
+By enabling the feature parameter `GlicActor:glic_actor_policy_control_exemption/true`, Chrome completely bypasses the subscription check, granting full agentic web actuation to all accounts.
+
+---
+
+## 6. Runtime Safety Checks Bypass
+
+Chrome enforces secondary page safety checks via `actor::switches::kDisableActorSafetyChecks`:
+- Passing `--disable-actor-safety-checks` overrides SafeBrowsing restrictions and internal action blocklists that might otherwise prevent Gemini from clicking, typing, or submitting on complex web applications.
+
+---
+
+## 7. Verified Autonomous Actuation Benchmark
+
+The effectiveness of this configuration was verified end-to-end on YouTube:
+- **Prompt:** `"In a new tab open youtube and create a 90s music playlist with 20 songs"`
+- **Execution:** Gemini inside Chrome autonomously planned the task, navigated to YouTube, searched for 90s music hits, filtered results to videos, requested user confirmation before mutating account state, created the `"90s Music"` playlist in YouTube Library, and populated it with 100+ iconic tracks (including Puddle Of Mudd, The Cardigans, Coolio, Haddaway, Christina Aguilera, and Aqua).
+- **Result:** Playlist confirmed live in YouTube Library (`120 tracks • 6+ hours`).
 
 ---
 
