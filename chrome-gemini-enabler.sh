@@ -457,7 +457,6 @@ glic_flags = [
     'enable-experimental-web-platform-features@1',
     'enable-unsafe-webgpu@1',
     'on-device-category-classifier@1',
-    'on-device-model-speculative-decoding@1',
     'web-speech-on-device-small-expert-model@1',
     'permissions-ai-v4@1',
     'skills@1',
