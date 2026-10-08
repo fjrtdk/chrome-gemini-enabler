@@ -433,15 +433,36 @@ glic_flags = [
     'glic-web-actuation-settings-toggle@1',
     'glic@1',
     'optimization-guide-on-device-model@2',
-    'prompt-api-for-gemini-nano-multimodal-input@1',
+    'prompt-api@1',
     'prompt-api-for-gemini-nano@1',
-    'proofreader-api-for-gemini-nano@1',
+    'prompt-api-multimodal-input@1',
+    'prompt-api-for-gemini-nano-multimodal-input@1',
+    'prompt-api-tool-use@1',
+    'prompt-api-sampling-mode@1',
+    'writer-api@1',
+    'writer-api-for-gemini-nano@1',
+    'rewriter-api@1',
     'rewriter-api-for-gemini-nano@1',
-    'skills@1',
+    'proofreader-api@1',
+    'proofreader-api-for-gemini-nano@1',
+    'semantic-embedder-api@1',
+    'summarizer-api@1',
     'summarizer-api-for-gemini-nano@1',
+    'summarizer-api-performance-preference@1',
+    'gemma4-for-built-in-ai@1',
+    'web-machine-learning-neural-network@1',
+    'experimental-web-machine-learning-neural-network@1',
+    'webnn-coreml@1',
+    'webnn-coreml-explicit-gpu-or-npu@1',
+    'enable-experimental-web-platform-features@1',
+    'enable-unsafe-webgpu@1',
+    'on-device-category-classifier@1',
+    'on-device-model-speculative-decoding@1',
+    'web-speech-on-device-small-expert-model@1',
+    'permissions-ai-v4@1',
+    'skills@1',
     'sync-ai-threads@1',
-    'sync-gemini-threads@1',
-    'writer-api-for-gemini-nano@1'
+    'sync-gemini-threads@1'
 ]
 
 for flag in glic_flags:
@@ -522,30 +543,47 @@ done
 
 # Launcher Setup
 echo "🚀 Setting up Chrome AI launcher..."
-LAUNCHER_FEATURES="Glic,GlicActor:glic_actor_policy_control_exemption/true,GlicActorPermissionsBypass,GlicActorUi,GlicActorUiMagicCursor,GlicActorIncrementalTyping,GlicActorEnableScriptTools,GlicActorAutofill,GlicDaisyChainNewTabs,GlicBackgroundActuation,GlicBackgroundTriggering,GlicExperimentalTriggering,GlicExperimentalTriggeringScriptTools,GlicExperimentalTriggeringScreenshot,GlicExperimentalTriggeringOptInBypass,GlicActorMoveBeforeClick,GlicWebActuationSetting,GlicWebActuationSettingsToggle,GlicCaptureRegion,WebMCP,DevToolsWebMCPSupport,AIPromptAPIMultimodalInput"
+LAUNCHER_FEATURES="AIPromptAPI,AIPromptAPILegacyIdentifiers,AIPromptAPILegacyParams,AIPromptAPIMultimodalInput,AIPromptAPIStructuredOutput,AIPromptAPIToolUse,AIRewriterAPI,AIWriterAPI,AISummarizationAPI,AISummarizationPerformancePreference,AISemanticEmbedder,LanguageDetectionAPI,TranslationAPI,WebMachineLearningNeuralNetwork,WebNNCoreML,Glic,GlicActor:glic_actor_policy_control_exemption/true,GlicActorPermissionsBypass,GlicActorUi,GlicActorUiMagicCursor,GlicActorIncrementalTyping,GlicActorEnableScriptTools,GlicActorAutofill,GlicDaisyChainNewTabs,GlicBackgroundActuation,GlicBackgroundTriggering,GlicExperimentalTriggering,GlicExperimentalTriggeringScriptTools,GlicExperimentalTriggeringScreenshot,GlicExperimentalTriggeringOptInBypass,GlicActorMoveBeforeClick,GlicWebActuationSetting,GlicWebActuationSettingsToggle,GlicCaptureRegion,WebMCP,DevToolsWebMCPSupport"
 LAUNCHER_DISABLE_FEATURES="GlicCountryFiltering,GlicLocaleFiltering,GlicUseSessionCountryForFiltering"
 
 if [[ "$OS_TYPE" == "Darwin" ]]; then
     APP_DIR="$HOME/Applications/Chrome AI.app"
     mkdir -p "$APP_DIR/Contents/MacOS"
-    cat << 'EOF' > "$APP_DIR/Contents/MacOS/Chrome AI"
+    cat << EOF > "$APP_DIR/Contents/MacOS/Chrome AI"
 #!/bin/bash
 CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-if [ ! -f "$CHROME_BIN" ]; then
-    CHROME_BIN=$(mdfind 'kMDItemCFBundleIdentifier == "com.google.Chrome"' | head -n 1)
-    if [ -n "$CHROME_BIN" ]; then
-        CHROME_BIN="$CHROME_BIN/Contents/MacOS/Google Chrome"
+if [ ! -f "\$CHROME_BIN" ]; then
+    CHROME_BIN=\$(mdfind 'kMDItemCFBundleIdentifier == "com.google.Chrome"' | head -n 1)
+    if [ -n "\$CHROME_BIN" ]; then
+        CHROME_BIN="\$CHROME_BIN/Contents/MacOS/Google Chrome"
     fi
 fi
 
-exec "$CHROME_BIN" \
-  --glic-dev \
-  --glic-open-on-startup=attached \
-  --variations-override-country=US \
-  --disable-actor-safety-checks \
-  --enable-features="Glic,GlicActor:glic_actor_policy_control_exemption/true,GlicActorPermissionsBypass,GlicActorUi,GlicActorUiMagicCursor,GlicActorIncrementalTyping,GlicActorEnableScriptTools,GlicActorAutofill,GlicDaisyChainNewTabs,GlicBackgroundActuation,GlicBackgroundTriggering,GlicExperimentalTriggering,GlicExperimentalTriggeringScriptTools,GlicExperimentalTriggeringScreenshot,GlicExperimentalTriggeringOptInBypass,GlicActorMoveBeforeClick,GlicWebActuationSetting,GlicWebActuationSettingsToggle,GlicCaptureRegion,WebMCP,DevToolsWebMCPSupport,AIPromptAPIMultimodalInput" \
-  --disable-features="GlicCountryFiltering,GlicLocaleFiltering,GlicUseSessionCountryForFiltering" \
-  "$@"
+MODEL_DIR=""
+for candidate in "\$HOME/Library/Application Support/Google/Chrome/OptGuideOnDeviceModel/"*; do
+    if [ -d "\$candidate" ] && [ -f "\$candidate/weights.bin" ]; then
+        MODEL_DIR="\$candidate"
+        break
+    fi
+done
+
+EXTRA_ARGS=()
+if [ -n "\$MODEL_DIR" ]; then
+    EXTRA_ARGS+=("--optimization-guide-ondevice-model-execution-override=\$MODEL_DIR")
+fi
+
+exec "\$CHROME_BIN" \\
+  --remote-debugging-port=9222 \\
+  --glic-dev \\
+  --glic-open-on-startup=attached \\
+  --variations-override-country=US \\
+  --disable-actor-safety-checks \\
+  --disable-checking-optimization-guide-user-permissions \\
+  --optimization-guide-performance-class=VeryHigh \\
+  "\${EXTRA_ARGS[@]}" \\
+  --enable-features="$LAUNCHER_FEATURES" \\
+  --disable-features="$LAUNCHER_DISABLE_FEATURES" \\
+  "\$@"
 EOF
     chmod +x "$APP_DIR/Contents/MacOS/Chrome AI"
 
@@ -557,17 +595,20 @@ EOF
     echo "   ✓ Installed CLI shortcut: $HOME/.local/bin/chrome-ai"
 elif [[ "$OS_TYPE" == "Linux" ]]; then
     mkdir -p "$HOME/.local/bin"
-    cat << 'EOF' > "$HOME/.local/bin/chrome-ai"
+    cat << EOF > "$HOME/.local/bin/chrome-ai"
 #!/bin/bash
-CHROME_BIN=$(which google-chrome-stable || which google-chrome || which chrome || true)
-exec "$CHROME_BIN" \
-  --glic-dev \
-  --glic-open-on-startup=attached \
-  --variations-override-country=US \
-  --disable-actor-safety-checks \
-  --enable-features="Glic,GlicActor:glic_actor_policy_control_exemption/true,GlicActorPermissionsBypass,GlicActorUi,GlicActorUiMagicCursor,GlicActorIncrementalTyping,GlicActorEnableScriptTools,GlicActorAutofill,GlicDaisyChainNewTabs,GlicBackgroundActuation,GlicBackgroundTriggering,GlicExperimentalTriggering,GlicExperimentalTriggeringScriptTools,GlicExperimentalTriggeringScreenshot,GlicExperimentalTriggeringOptInBypass,GlicActorMoveBeforeClick,GlicWebActuationSetting,GlicWebActuationSettingsToggle,GlicCaptureRegion,WebMCP,DevToolsWebMCPSupport,AIPromptAPIMultimodalInput" \
-  --disable-features="GlicCountryFiltering,GlicLocaleFiltering,GlicUseSessionCountryForFiltering" \
-  "$@"
+CHROME_BIN=\$(which google-chrome-stable || which google-chrome || which chrome || true)
+exec "\$CHROME_BIN" \\
+  --remote-debugging-port=9222 \\
+  --glic-dev \\
+  --glic-open-on-startup=attached \\
+  --variations-override-country=US \\
+  --disable-actor-safety-checks \\
+  --disable-checking-optimization-guide-user-permissions \\
+  --optimization-guide-performance-class=VeryHigh \\
+  --enable-features="$LAUNCHER_FEATURES" \\
+  --disable-features="$LAUNCHER_DISABLE_FEATURES" \\
+  "\$@"
 EOF
     chmod +x "$HOME/.local/bin/chrome-ai"
     echo "   ✓ Installed CLI shortcut: $HOME/.local/bin/chrome-ai"
