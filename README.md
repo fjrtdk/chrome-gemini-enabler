@@ -10,17 +10,26 @@ Unleash the hidden power of Google's next-gen AI companion! This script automati
 
 ## 🤖 What does this enable?
 
-### 💬 Gemini (Glic) Sidebar
-Bring the official, built-in Gemini side panel to your screen. Ask questions, summarize pages, draft emails, and get contextual help directly alongside your active webpage.
+### 💬 Gemini (Glic) Sidebar & Toolbar Button
+Bring the official, built-in Gemini side panel to your screen with the dedicated top-right **`✨ Ask Gemini`** toolbar button. Ask questions, analyze active pages, ask about videos or audio playing on tabs, draft emails, and get contextual help directly alongside your active webpage.
 
-### 🌐 Auto Browse ("Act on Web")
-Step into the future of web automation. Unlocking Auto Browse allows Gemini to act as a **web agent** that can:
+### 🌐 Auto Browse ("Act on Web") & Magic Cursor
+Step into the future of web automation. Unlocking Auto Browse allows Gemini to act as an autonomous **web agent** that can:
 - 📝 **Fill out forms** autonomously.
 - 🛍️ **Search, find, and compare products** across multiple pages.
 - 📅 **Schedule appointments** or look up flight options.
-- 🖱️ **Take control of the viewport** to click, scroll, and navigate tabs on your behalf.
+- 🖱️ **Take control of the viewport** with the Glic Magic Cursor to click, scroll, and navigate tabs on your behalf.
 
 *Normally restricted to U.S. Google accounts with specific Google One AI Premium subscriptions, this toolkit activates the necessary configurations locally and exposes the built-in policy control exemption parameter (`glic_actor_policy_control_exemption`), completely unlocking Auto Browse actuation on any account.*
+
+### 🧠 Built-In On-Device AI APIs (Gemini Nano & WebNN)
+Unlocks the complete suite of local on-device machine learning APIs running entirely private and locally:
+- **Prompt API (`window.LanguageModel`)**: Direct on-device inference with Gemini Nano (supports streaming, system prompts, temperature).
+- **Language Detection API (`window.LanguageDetector`)**: High-accuracy local language detection.
+- **Summarization API (`window.AISummarizer`)**: Local page and text summarization.
+- **Writer & Rewriter APIs (`window.AIWriter`, `window.AIRewriter`)**: Local text authoring and tone restructuring.
+- **WebNN (`navigator.ml`)**: Hardware-accelerated neural networks (via Apple CoreML on macOS).
+- **WebGPU (`navigator.gpu`)**: Direct Metal / Vulkan GPU compute.
 
 ---
 
@@ -82,6 +91,21 @@ Once patched, launch Chrome using the generated launcher:
 - **macOS**: Launch **`Chrome AI.app`** from `~/Applications` or terminal: `~/.local/bin/chrome-ai`
 - **Linux**: Run `~/.local/bin/chrome-ai`
 
+> [!TIP]
+> **Channel Differences (macOS & Linux)**:
+> - **Google Chrome Dev (v157+) or Canary** is recommended for the full UI experience. Google has compiled the top-right **`✨ Ask Gemini`** toolbar pill button, Glic side panel views, and autonomous Actor framework directly into Dev/Canary builds.
+> - **Google Chrome Stable (v154)** activates the underlying on-device AI APIs (Prompt API, WebNN, Gemini Nano) and settings flags, but does not yet contain the compiled Glic UI toolbar button.
+> - The generated `Chrome AI.app` and `chrome-ai` launcher automatically detect and prioritize Google Chrome Dev / Canary if installed, falling back to Stable.
+
+### 🧪 Live Verification Benchmark
+
+This enabler was verified end-to-end on YouTube using Gemini's autonomous Auto Browse capability:
+1. **User Prompt**: *"In YouTube, create a 90s music playlist"*
+2. **Auto Browse Plan**: Gemini formulated a plan: *"Create a new playlist for 90s music on YouTube."*
+3. **Autonomous Actuation**: Chrome displayed the top banner *"Take over task"* while Gemini used its on-screen Magic Cursor (`GlicActorUiMagicCursor`) to navigate YouTube, click the Create menu, open the playlist dialog, and type the playlist title.
+4. **Result**: *"Task done for you: A new playlist titled 90s Music has been created in your YouTube library."*  
+   Playlist created successfully at `youtube.com/playlist?list=PLfEIYzVgblVc`.
+
 ### 🪟 Windows (PowerShell)
 
 > [!WARNING]
@@ -100,3 +124,4 @@ irm https://raw.githubusercontent.com/fjrtdk/chrome-gemini-enabler/main/chrome-g
 Editing Chrome configuration files is an advanced procedure. Although this script creates automatic backups (`.bak` files), please proceed with caution. **Use at your own risk.**
 
 *Note: Google Sync can sometimes sync account settings from the cloud and revert your local changes. If features disappear, simply pause Sync or run the script again.*
+

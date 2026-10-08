@@ -83,12 +83,33 @@ Chrome enforces secondary page safety checks via `actor::switches::kDisableActor
 
 ---
 
-## 7. Verified Autonomous Actuation Benchmark
+## 7. Built-in On-Device AI Suite & WebNN
+
+In addition to cloud-assisted Glic Actor, this toolkit activates the entire browser-resident on-device AI ecosystem:
+- **Prompt API (`window.LanguageModel`)**: Direct access to Gemini Nano on device.
+- **Language Detection API (`window.LanguageDetector`)**: Fast, offline language classification.
+- **Summarization, Writer, and Rewriter APIs**: On-device drafting and summarization.
+- **WebNN (`navigator.ml`)**: Hardware-accelerated ML graph execution (using Apple CoreML backend on macOS Apple Silicon).
+- **Sampling Fix**: Avoids `on-device-model-speculative-decoding@1` which previously forced sampling mode to `most-predictable`.
+
+---
+
+## 8. Smart Launcher Architecture
+
+The generated `Chrome AI.app` and `chrome-ai` launcher wrappers implement channel intelligence:
+- Automatically detects and prioritizes **Google Chrome Dev** (or Canary) on macOS/Linux where Glic UI elements and toolbar pill views (`✨ Ask Gemini`) are compiled.
+- Avoids passing `--remote-debugging-port` to the default user profile, preventing profile startup lockouts introduced in modern Chrome releases.
+- Auto-locates the local `OptGuideOnDeviceModel` directory to ensure immediate model execution without waiting for background downloads.
+
+---
+
+## 9. Verified Autonomous Actuation Benchmark
 
 The effectiveness of this configuration was verified end-to-end on YouTube:
-- **Prompt:** `"In a new tab open youtube and create a 90s music playlist with 20 songs"`
-- **Execution:** Gemini inside Chrome autonomously planned the task, navigated to YouTube, searched for 90s music hits, filtered results to videos, requested user confirmation before mutating account state, created the `"90s Music"` playlist in YouTube Library, and populated it with 100+ iconic tracks (including Puddle Of Mudd, The Cardigans, Coolio, Haddaway, Christina Aguilera, and Aqua).
-- **Result:** Playlist confirmed live in YouTube Library (`120 tracks • 6+ hours`).
+- **Prompt:** `"In YouTube, create a 90s music playlist"`
+- **Auto Browse Plan:** Gemini formulated: *"Create a new playlist for 90s music on YouTube."*
+- **Execution:** Gemini displayed *"Browsing for you: Opening create menu on YouTube"*, actuated the page with its on-screen Magic Cursor, navigated to the playlist dialog, input the title, set private visibility, and submitted the form.
+- **Result:** Confirmed live in YouTube Library (`youtube.com/playlist?list=PLfEIYzVgblVc`).
 
 ---
 

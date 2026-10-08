@@ -550,8 +550,13 @@ if [[ "$OS_TYPE" == "Darwin" ]]; then
     mkdir -p "$APP_DIR/Contents/MacOS"
     cat << EOF > "$APP_DIR/Contents/MacOS/Chrome AI"
 #!/bin/bash
-CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-if [ ! -f "\$CHROME_BIN" ]; then
+if [ -f "/Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev" ]; then
+    CHROME_BIN="/Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev"
+elif [ -f "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary" ]; then
+    CHROME_BIN="/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"
+elif [ -f "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+    CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+else
     CHROME_BIN=\$(mdfind 'kMDItemCFBundleIdentifier == "com.google.Chrome"' | head -n 1)
     if [ -n "\$CHROME_BIN" ]; then
         CHROME_BIN="\$CHROME_BIN/Contents/MacOS/Google Chrome"
@@ -559,7 +564,7 @@ if [ ! -f "\$CHROME_BIN" ]; then
 fi
 
 MODEL_DIR=""
-for candidate in "\$HOME/Library/Application Support/Google/Chrome/OptGuideOnDeviceModel/"*; do
+for candidate in "\$HOME/Library/Application Support/Google/Chrome/OptGuideOnDeviceModel/"* "\$HOME/Library/Application Support/Google/Chrome Dev/OptGuideOnDeviceModel/"*; do
     if [ -d "\$candidate" ] && [ -f "\$candidate/weights.bin" ]; then
         MODEL_DIR="\$candidate"
         break
@@ -572,7 +577,6 @@ if [ -n "\$MODEL_DIR" ]; then
 fi
 
 exec "\$CHROME_BIN" \\
-  --remote-debugging-port=9222 \\
   --glic-dev \\
   --glic-open-on-startup=attached \\
   --variations-override-country=US \\
@@ -596,9 +600,8 @@ elif [[ "$OS_TYPE" == "Linux" ]]; then
     mkdir -p "$HOME/.local/bin"
     cat << EOF > "$HOME/.local/bin/chrome-ai"
 #!/bin/bash
-CHROME_BIN=\$(which google-chrome-stable || which google-chrome || which chrome || true)
+CHROME_BIN=\$(which google-chrome-unstable || which google-chrome-dev || which google-chrome-beta || which google-chrome-stable || which google-chrome || which chrome || true)
 exec "\$CHROME_BIN" \\
-  --remote-debugging-port=9222 \\
   --glic-dev \\
   --glic-open-on-startup=attached \\
   --variations-override-country=US \\
